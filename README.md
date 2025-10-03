@@ -40,8 +40,8 @@ Set environment variables via `.env` to connect to Groq, ElevenLabs, and an exte
 
 ```bash
 cd frontend
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 Configure `VITE_API_URL` in a `.env` file to point at the backend service.
