@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import AsyncIterator
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,8 +47,8 @@ async def create_chat(payload: ChatCreate, session: AsyncSession = Depends(get_s
     return ChatSchema.from_orm(chat)
 
 
-@router.delete("/{chat_id}", status_code=204)
-async def delete_chat(chat_id: str, session: AsyncSession = Depends(get_session)) -> None:
+@router.delete("/{chat_id}", status_code=204, response_class=Response)
+async def delete_chat(chat_id: str, session: AsyncSession = Depends(get_session)) -> Response:
     """Delete a chat and all of its messages."""
 
     chat = await session.get(Chat, chat_id)
@@ -56,6 +56,7 @@ async def delete_chat(chat_id: str, session: AsyncSession = Depends(get_session)
         raise HTTPException(status_code=404, detail="Chat not found")
     await session.delete(chat)
     await session.commit()
+    return Response(status_code=204)
 
 
 @router.post("/{chat_id}/messages", response_model=MessageSchema)
