@@ -42,7 +42,7 @@ function KnowledgeDrawer({ open, onClose }: Props) {
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
-          <div className="absolute inset-0 flex max-w-4xl">
+          <div className="absolute inset-0 flex w-full justify-end">
             <Transition.Child
               as={Fragment}
               enter="transform transition ease-in-out duration-300"
@@ -52,8 +52,8 @@ function KnowledgeDrawer({ open, onClose }: Props) {
               leaveFrom="translate-x-0"
               leaveTo="translate-x-full"
             >
-              <Dialog.Panel className="ml-auto flex h-full w-full max-w-4xl flex-col bg-primary-950/95 shadow-2xl backdrop-blur-3xl">
-                <header className="flex items-center justify-between border-b border-white/10 px-10 py-6">
+              <Dialog.Panel className="ml-auto flex h-full w-full max-w-full flex-col bg-primary-950/95 shadow-2xl backdrop-blur-3xl sm:max-w-2xl lg:max-w-4xl">
+                <header className="flex flex-col gap-4 border-b border-white/10 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10">
                   <div>
                     <p className="text-xs uppercase tracking-[0.35em] text-white/50">Memory Vault</p>
                     <Dialog.Title className="mt-2 font-display text-2xl font-semibold text-white">
@@ -64,8 +64,8 @@ function KnowledgeDrawer({ open, onClose }: Props) {
                     Close
                   </button>
                 </header>
-                <div className="grid flex-1 grid-cols-[320px_1fr] overflow-hidden">
-                  <aside className="border-r border-white/10 p-8">
+                <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
+                  <aside className="border-b border-white/10 p-6 lg:border-b-0 lg:border-r lg:p-8">
                     <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-accent/60 bg-accent/20 px-4 py-3 text-sm font-medium text-white shadow-neon transition hover:bg-accent/30">
                       <Upload className="h-4 w-4" /> Upload Dataset
                     </button>
@@ -95,8 +95,8 @@ function KnowledgeDrawer({ open, onClose }: Props) {
                       ))}
                     </div>
                   </aside>
-                  <section className="relative flex flex-col gap-6 overflow-y-auto p-10">
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-white shadow-neon">
+                  <section className="relative flex flex-col gap-6 overflow-y-auto p-6 sm:p-8 lg:p-10">
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white shadow-neon sm:p-8">
                       <h3 className="flex items-center gap-2 text-lg font-semibold">
                         <FileText className="h-5 w-5 text-accent" /> Rich Markdown Preview
                       </h3>
@@ -109,7 +109,7 @@ function KnowledgeDrawer({ open, onClose }: Props) {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4 }}
-                      className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-8 text-sm text-white/80"
+                      className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 text-sm text-white/80 sm:p-8"
                     >
                       <p className="text-xs uppercase tracking-[0.35em] text-white/40">Suggested actions</p>
                       <ul className="mt-3 space-y-2">

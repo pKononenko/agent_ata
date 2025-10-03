@@ -20,17 +20,17 @@ function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode }: Props) {
   const [selectedChat, setSelectedChat] = useState('1');
 
   return (
-    <aside className="flex w-[320px] flex-col border-r border-white/10 bg-black/40 backdrop-blur-2xl">
-      <div className="flex items-center justify-between px-6 py-6">
-        <div>
-          <h2 className="font-display text-lg font-semibold text-white">Session Deck</h2>
+    <aside className="flex w-full max-w-full flex-col border-b border-white/10 bg-black/40 backdrop-blur-2xl md:w-[320px] md:border-b-0 md:border-r">
+      <div className="flex items-center justify-between px-4 py-5 sm:px-6">
+        <div className="max-w-xs">
+          <h2 className="font-display text-base font-semibold text-white sm:text-lg">Session Deck</h2>
           <p className="text-xs text-white/60">Switch between calls, chats and curated memory</p>
         </div>
         <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20">
           <Plus className="h-5 w-5" />
         </button>
       </div>
-      <div className="px-6">
+      <div className="px-4 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => onSwitchMode('chat')}
@@ -79,7 +79,7 @@ function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode }: Props) {
           ))}
         </AnimatePresence>
       </div>
-      <div className="border-t border-white/10 px-6 py-6">
+      <div className="border-t border-white/10 px-4 py-5 sm:px-6">
         <button
           onClick={onOpenDrawer}
           className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/20"

@@ -1,18 +1,23 @@
 from __future__ import annotations
 
+"""Database session and engine management helpers."""
+
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
-from .config import get_settings
+from app.config import get_settings
 
 Base = declarative_base()
 _engine = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
-def _create_engine():
+def _create_engine() -> None:
+    """Initialise the global SQLAlchemy engine and session factory."""
+
     global _engine, _session_factory
     settings = get_settings()
     _engine = create_async_engine(settings.database_url, echo=settings.debug, future=True)
@@ -20,6 +25,8 @@ def _create_engine():
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Return a lazily instantiated async session factory."""
+
     global _session_factory
     if _session_factory is None:
         _create_engine()
@@ -28,7 +35,9 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 @asynccontextmanager
-async def lifespan(app):
+async def lifespan(app) -> AsyncIterator[None]:
+    """Manage engine lifecycle for FastAPI."""
+
     _create_engine()
     try:
         yield

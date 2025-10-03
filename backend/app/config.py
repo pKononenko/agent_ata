@@ -1,10 +1,14 @@
+"""Application configuration utilities."""
+
 from functools import lru_cache
-from typing import List
+from typing import Iterable, List
 
 from pydantic import BaseSettings, Field, validator
 
 
 class Settings(BaseSettings):
+    """Runtime configuration for the FastAPI application."""
+
     app_name: str = "Groq ElevenLabs Multimodal Chat"
     debug: bool = False
 
@@ -21,10 +25,15 @@ class Settings(BaseSettings):
     groq_api_key: str = Field("", description="API key for Groq LLM + STT services.")
     elevenlabs_api_key: str = Field("", description="API key for ElevenLabs text-to-speech streaming.")
 
-    allowed_origins: List[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"])
+    allowed_origins: List[str] = Field(
+        default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"],
+        description="Origins permitted to access the API via CORS.",
+    )
 
     signalling_secret: str = Field(
-        "", description="Optional shared secret to authenticate WebRTC signalling clients.", env="SIGNALLING_SECRET"
+        "",
+        description="Optional shared secret to authenticate WebRTC signalling clients.",
+        env="SIGNALLING_SECRET",
     )
 
     class Config:
@@ -32,12 +41,16 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
     @validator("allowed_origins", pre=True)
-    def _split_origins(cls, value: str | List[str]):
+    def _split_origins(cls, value: str | Iterable[str]) -> List[str]:
+        """Support comma-separated origins while keeping list inputs untouched."""
+
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+        return list(value)
 
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return a cached instance of :class:`Settings`."""
+
     return Settings()

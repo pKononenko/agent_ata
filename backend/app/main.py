@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+"""Application entry point."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import get_settings
-from .database import lifespan
-from .routers import chats, knowledge, realtime
+from app.config import get_settings
+from app.database import lifespan
+from app.routers import chats, knowledge, realtime
 
 settings = get_settings()
 
@@ -25,5 +27,7 @@ app.include_router(realtime.router)
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
+    """Simple health-check endpoint."""
+
     return {"status": "ok", "name": settings.app_name}

@@ -24,9 +24,9 @@ function MessageBubble({ role, content }: Props) {
 
   return (
     <div
-      className={clsx('rounded-3xl border px-6 py-5 shadow-lg backdrop-blur', {
-        'ml-auto max-w-2xl border-accent/60 bg-accent/30 text-white': isUser,
-        'mr-auto max-w-2xl border-white/10 bg-black/40 text-white': !isUser,
+      className={clsx('w-full max-w-full rounded-3xl border px-5 py-4 shadow-lg backdrop-blur sm:px-6 sm:py-5', {
+        'ml-auto border-accent/60 bg-accent/30 text-white sm:max-w-2xl': isUser,
+        'mr-auto border-white/10 bg-black/40 text-white sm:max-w-2xl': !isUser,
       })}
     >
       <div className="text-xs uppercase tracking-[0.3em] text-white/40">{role}</div>
