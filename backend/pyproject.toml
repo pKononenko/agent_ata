@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]",
     "sqlalchemy[asyncio]",
     "pydantic",
+    "pydantic-settings",
     "httpx",
     "python-dotenv",
 ]
