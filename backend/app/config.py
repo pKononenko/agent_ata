@@ -1,9 +1,10 @@
 """Application configuration utilities."""
 
 from functools import lru_cache
-from typing import Iterable, List
+from typing import Iterable, List, Union
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -36,12 +37,10 @@ class Settings(BaseSettings):
         env="SIGNALLING_SECRET",
     )
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    @validator("allowed_origins", pre=True)
-    def _split_origins(cls, value: str | Iterable[str]) -> List[str]:
+    @field_validator("allowed_origins", mode="before")
+    def _split_origins(cls, value: Union[str, Iterable[str]]) -> List[str]:
         """Support comma-separated origins while keeping list inputs untouched."""
 
         if isinstance(value, str):
