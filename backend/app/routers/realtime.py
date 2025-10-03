@@ -1,15 +1,17 @@
-from __future__ import annotations
+"""Realtime signalling routes."""
 
-import json
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 
-from ..config import get_settings
+from app.config import get_settings
 
 router = APIRouter(prefix="/realtime", tags=["realtime"])
 
 
-async def validate_secret(secret: str | None):
+async def validate_secret(secret: str | None) -> None:
+    """Validate an optional shared secret for websocket clients."""
+
     settings = get_settings()
     if settings.signalling_secret and secret != settings.signalling_secret:
         raise HTTPException(status_code=401, detail="Invalid signalling secret")
@@ -17,9 +19,11 @@ async def validate_secret(secret: str | None):
 
 @router.websocket("/signalling")
 async def signalling_socket(websocket: WebSocket, secret: str | None = None):
+    """Echo websocket that validates an optional secret."""
+
+    await validate_secret(secret)
     await websocket.accept()
     try:
-        await validate_secret(secret)
         while True:
             payload = await websocket.receive_text()
             await websocket.send_text(payload)

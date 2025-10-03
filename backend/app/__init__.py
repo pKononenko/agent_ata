@@ -1,0 +1,1 @@
+"""App package exposing the FastAPI application and utilities."""

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+"""Vector store integration helpers."""
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, Optional
+from typing import Iterable
 
 import httpx
 
-from ..config import get_settings
-from ..schemas.knowledge import KnowledgeItem, KnowledgeItemCreate
+from app.config import get_settings
+from app.schemas.knowledge import KnowledgeItem, KnowledgeItemCreate
 
 
 @dataclass
 class VectorStoreItem:
+    """Simple representation of a point stored in the vector database."""
+
     id: str
     payload: dict
     vector: list[float]
@@ -23,23 +27,31 @@ class VectorStoreClient:
     def __init__(self, collection: str = "knowledge_items"):
         self.settings = get_settings()
         self.collection = collection
-        self.base_url = self.settings.vector_store_url.replace("qdrant://", "http://")
+        raw_url = self.settings.vector_store_url
+        if raw_url.startswith("qdrant+https://"):
+            raw_url = raw_url.replace("qdrant+https://", "https://", 1)
+        elif raw_url.startswith("qdrant://"):
+            raw_url = raw_url.replace("qdrant://", "http://", 1)
+        self.base_url = raw_url
         self._http = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
 
     async def ensure_collection(self, vector_size: int = 1536):
-        try:
-            await self._http.put(
-                f"/collections/{self.collection}",
-                json={
-                    "name": self.collection,
-                    "vectors": {"size": vector_size, "distance": "Cosine"},
-                },
-            )
-        except httpx.HTTPStatusError:
-            pass
+        """Create the collection if it does not already exist."""
+
+        response = await self._http.put(
+            f"/collections/{self.collection}",
+            json={
+                "name": self.collection,
+                "vectors": {"size": vector_size, "distance": "Cosine"},
+            },
+        )
+        if response.status_code not in (200, 201, 409):
+            response.raise_for_status()
 
     async def upsert(self, items: Iterable[VectorStoreItem]):
-        await self._http.put(
+        """Insert or update vector store items."""
+
+        response = await self._http.put(
             f"/collections/{self.collection}/points",
             json={
                 "points": [
@@ -48,8 +60,11 @@ class VectorStoreClient:
                 ]
             },
         )
+        response.raise_for_status()
 
     async def query(self, text_vector: list[float], limit: int = 4) -> list[KnowledgeItem]:
+        """Query the collection for similar vectors."""
+
         response = await self._http.post(
             f"/collections/{self.collection}/points/search",
             json={"vector": text_vector, "limit": limit, "with_payload": True},
@@ -59,6 +74,11 @@ class VectorStoreClient:
         items: list[KnowledgeItem] = []
         for entry in results:
             payload = entry.get("payload", {})
+            created_at_raw = payload.get("created_at")
+            try:
+                created_at = datetime.fromisoformat(created_at_raw) if created_at_raw else datetime.utcnow()
+            except ValueError:
+                created_at = datetime.utcnow()
             items.append(
                 KnowledgeItem(
                     id=str(entry["id"]),
@@ -66,19 +86,25 @@ class VectorStoreClient:
                     text=payload.get("text", ""),
                     tags=payload.get("tags", []),
                     source=payload.get("source"),
-                    created_at=datetime.fromisoformat(payload.get("created_at")),
+                    created_at=created_at,
                 )
             )
         return items
 
-    async def close(self):
+    async def close(self) -> None:
+        """Close the underlying HTTP client."""
+
         await self._http.aclose()
 
 
 async def embed_text(text: str) -> list[float]:
-    """Placeholder embedding using Groq LLM embedding endpoint."""
+    """Create an embedding vector using Groq's embedding endpoint."""
+
     settings = get_settings()
-    headers = {"Authorization": f"Bearer {settings.groq_api_key}"} if settings.groq_api_key else {}
+    if not settings.groq_api_key:
+        raise RuntimeError("GROQ_API_KEY must be configured to embed text.")
+
+    headers = {"Authorization": f"Bearer {settings.groq_api_key}"}
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
             "https://api.groq.com/openai/v1/embeddings",
@@ -91,31 +117,35 @@ async def embed_text(text: str) -> list[float]:
 
 
 async def create_knowledge_item(payload: KnowledgeItemCreate, item_id: str) -> KnowledgeItem:
+    """Persist a knowledge item and return the stored representation."""
+
     vector = await embed_text(payload.text)
-    created_at = datetime.utcnow().isoformat()
+    timestamp = datetime.utcnow()
     client = VectorStoreClient()
-    await client.ensure_collection(vector_size=len(vector))
-    await client.upsert(
-        [
-            VectorStoreItem(
-                id=item_id,
-                payload={
-                    "title": payload.title,
-                    "text": payload.text,
-                    "tags": payload.tags,
-                    "source": payload.source,
-                    "created_at": created_at,
-                },
-                vector=vector,
-            )
-        ]
-    )
-    await client.close()
+    try:
+        await client.ensure_collection(vector_size=len(vector))
+        await client.upsert(
+            [
+                VectorStoreItem(
+                    id=item_id,
+                    payload={
+                        "title": payload.title,
+                        "text": payload.text,
+                        "tags": payload.tags,
+                        "source": payload.source,
+                        "created_at": timestamp.isoformat(),
+                    },
+                    vector=vector,
+                )
+            ]
+        )
+    finally:
+        await client.close()
     return KnowledgeItem(
         id=item_id,
         title=payload.title,
         text=payload.text,
         tags=payload.tags,
         source=payload.source,
-        created_at=datetime.fromisoformat(created_at),
+        created_at=timestamp,
     )

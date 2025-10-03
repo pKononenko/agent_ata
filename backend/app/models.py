@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+"""SQLAlchemy ORM models used by the application."""
+
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .database import Base
+from app.database import Base
 
 
 class Chat(Base):
+    """A persisted conversation between the user and the assistant."""
+
     __tablename__ = "chats"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -20,6 +24,8 @@ class Chat(Base):
 
 
 class Message(Base):
+    """A single message exchanged within a chat."""
+
     __tablename__ = "messages"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
