@@ -1,6 +1,7 @@
 """Application configuration utilities."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Iterable, List, Union
 
 from pydantic import Field, field_validator
@@ -37,7 +38,10 @@ class Settings(BaseSettings):
         env="SIGNALLING_SECRET",
     )
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=(Path(__file__).resolve().parent.parent / ".env"),
+        env_file_encoding="utf-8",
+    )
 
     @field_validator("allowed_origins", mode="before")
     def _split_origins(cls, value: Union[str, Iterable[str]]) -> List[str]:
