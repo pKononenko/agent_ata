@@ -34,7 +34,7 @@ pip install -e .
 uvicorn app.main:app --reload
 ```
 
-Set environment variables via `.env` to connect to Groq, ElevenLabs, and an external database/vector store.
+Set environment variables via `.env` to connect to Groq, ElevenLabs, and an external database/vector store. A starter template is provided in [`backend/.env.sample`](backend/.env.sample).
 
 ### Frontend
 
@@ -44,7 +44,7 @@ npm install
 npm run dev
 ```
 
-Configure `VITE_API_URL` in a `.env` file to point at the backend service.
+Configure `VITE_API_URL` in a `.env` file (see [`frontend/.env.sample`](frontend/.env.sample)) to point at the backend service.
 
 ## Project Structure
 
