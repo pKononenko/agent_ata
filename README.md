@@ -36,6 +36,14 @@ uvicorn app.main:app --reload
 
 Set environment variables via `.env` to connect to Groq, ElevenLabs, and an external database/vector store. A starter template is provided in [`backend/.env.sample`](backend/.env.sample).
 
+To run the Postgres database used by the backend, start the bundled Docker Compose stack:
+
+```bash
+docker compose up -d postgres
+```
+
+This provisions a Postgres 16 instance with credentials matching the defaults in the backend `.env.sample`. Update `DATABASE_URL` if you choose different credentials or a remote host.
+
 ### Frontend
 
 ```bash
