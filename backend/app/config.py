@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     )
 
     groq_api_key: str = Field("", description="API key for Groq LLM + STT services.")
+    groq_model: str = Field(
+        "openai/gpt-oss-120b",
+        description="Identifier of the Groq LLM model used for chat completions.",
+    )
     elevenlabs_api_key: str = Field("", description="API key for ElevenLabs text-to-speech streaming.")
 
     allowed_origins: List[str] = Field(

@@ -76,19 +76,20 @@ async def generate_response(
     if not messages:
         raise ValueError("At least one chat message is required to request a completion.")
 
+    settings = get_settings()
     client = _get_chat_client()
     request_messages = _combine_messages(messages, knowledge_snippets)
 
     try:
         if stream:
             completion = await client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model=settings.groq_model,
                 messages=request_messages,
                 stream=True,
             )
         else:
             completion = await client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model=settings.groq_model,
                 messages=request_messages,
                 stream=False,
             )
@@ -111,7 +112,7 @@ async def generate_response(
         async for chunk in completion:
             yield chunk.model_dump_json(exclude_none=True)
     finally:
-        await completion.aclose()
+        await completion.close()
 
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
