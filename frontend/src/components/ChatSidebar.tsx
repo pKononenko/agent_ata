@@ -1,23 +1,38 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessageCircle, Waves, LibraryBig, Settings, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { PanelMode } from '../App';
+import { useChats, useCreateChat } from '../hooks/useChatApi';
 
 interface Props {
   onOpenDrawer: () => void;
   onSwitchMode: (mode: PanelMode) => void;
   activeMode: PanelMode;
+  selectedChatId: string | null;
+  onSelectChat: (chatId: string) => void;
 }
 
-const mockChats = [
-  { id: '1', title: 'Creative Ideation Lab', updatedAt: '2m ago' },
-  { id: '2', title: 'Product Strategy Sprint', updatedAt: '1h ago' },
-  { id: '3', title: 'Audio UI Research', updatedAt: 'Yesterday' },
-];
+function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode, selectedChatId, onSelectChat }: Props) {
+  const { data: chats, isLoading, isError } = useChats();
+  const createChatMutation = useCreateChat();
 
-function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode }: Props) {
-  const [selectedChat, setSelectedChat] = useState('1');
+  useEffect(() => {
+    if (!selectedChatId && chats && chats.length > 0) {
+      onSelectChat(chats[0].id);
+    }
+  }, [chats, onSelectChat, selectedChatId]);
+
+  const handleCreateChat = async () => {
+    if (createChatMutation.isPending) return;
+    try {
+      const title = `Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      const created = await createChatMutation.mutateAsync({ title });
+      onSelectChat(created.id);
+    } catch (error) {
+      console.error('Unable to create chat', error);
+    }
+  };
 
   return (
     <aside className="flex w-full max-w-full flex-col border-b border-white/10 bg-black/40 backdrop-blur-2xl md:w-[320px] md:border-b-0 md:border-r">
@@ -26,7 +41,11 @@ function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode }: Props) {
           <h2 className="font-display text-base font-semibold text-white sm:text-lg">Session Deck</h2>
           <p className="text-xs text-white/60">Switch between calls, chats and curated memory</p>
         </div>
-        <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20">
+        <button
+          onClick={handleCreateChat}
+          disabled={createChatMutation.isPending}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <Plus className="h-5 w-5" />
         </button>
       </div>
@@ -62,19 +81,31 @@ function ChatSidebar({ onOpenDrawer, onSwitchMode, activeMode }: Props) {
       </div>
       <div className="mt-6 flex-1 overflow-y-auto px-2">
         <p className="px-4 text-xs uppercase tracking-[0.3em] text-white/40">Active sessions</p>
+        {(isLoading || isError || (chats && chats.length === 0)) && (
+          <div className="px-2 py-4 text-center text-xs text-white/60">
+            {isLoading && <span>Loading chats…</span>}
+            {isError && <span>Unable to load chats</span>}
+            {!isLoading && !isError && chats && chats.length === 0 && <span>No chats yet. Create one to begin.</span>}
+          </div>
+        )}
         <AnimatePresence>
-          {mockChats.map((chat) => (
+          {chats?.map((chat) => (
             <motion.button
               layout
               key={chat.id}
-              onClick={() => setSelectedChat(chat.id)}
+              onClick={() => onSelectChat(chat.id)}
               className={clsx(
                 'mt-3 flex w-full flex-col gap-1 rounded-2xl border px-4 py-3 text-left transition',
-                selectedChat === chat.id ? 'border-white/20 bg-white/10' : 'border-transparent bg-white/5 hover:border-white/10'
+                selectedChatId === chat.id ? 'border-white/20 bg-white/10' : 'border-transparent bg-white/5 hover:border-white/10'
               )}
             >
               <span className="font-medium text-white">{chat.title}</span>
-              <span className="text-xs text-white/50">{chat.updatedAt}</span>
+              <span className="text-xs text-white/50">
+                {(() => {
+                  const createdAt = new Date(chat.created_at);
+                  return Number.isNaN(createdAt.getTime()) ? 'Unknown time' : createdAt.toLocaleString();
+                })()}
+              </span>
             </motion.button>
           ))}
         </AnimatePresence>

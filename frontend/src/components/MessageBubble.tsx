@@ -8,10 +8,8 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-json';
 
-type Role = 'user' | 'assistant' | 'system';
-
 interface Props {
-  role: Role;
+  role: string;
   content: string;
 }
 

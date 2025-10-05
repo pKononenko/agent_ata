@@ -81,6 +81,23 @@ async def post_message(
     return MessageSchema.from_orm(message)
 
 
+@router.get("/{chat_id}/messages", response_model=list[MessageSchema])
+async def list_messages(
+    chat_id: str, session: AsyncSession = Depends(get_session)
+) -> list[MessageSchema]:
+    """Return all messages for the specified chat ordered chronologically."""
+
+    chat = await session.get(Chat, chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    result = await session.execute(
+        select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at)
+    )
+    messages = result.scalars().all()
+    return [MessageSchema.from_orm(message) for message in messages]
+
+
 @router.post("/{chat_id}/stream")
 async def stream_completion(chat_id: str, session: AsyncSession = Depends(get_session)) -> StreamingResponse:
     """Stream a completion from the LLM for the specified chat."""

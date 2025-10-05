@@ -11,10 +11,17 @@ export type PanelMode = 'chat' | 'call';
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mode, setMode] = useState<PanelMode>('chat');
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   return (
     <div className="flex min-h-screen w-full flex-col overflow-hidden bg-primary-950 md:flex-row">
-      <ChatSidebar onOpenDrawer={() => setDrawerOpen(true)} onSwitchMode={setMode} activeMode={mode} />
+      <ChatSidebar
+        onOpenDrawer={() => setDrawerOpen(true)}
+        onSwitchMode={setMode}
+        activeMode={mode}
+        selectedChatId={activeChatId}
+        onSelectChat={setActiveChatId}
+      />
       <main className="relative flex flex-1 flex-col">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-32 left-10 h-72 w-72 rounded-full bg-primary-500/20 blur-3xl md:left-32 md:h-96 md:w-96" />
@@ -38,7 +45,9 @@ function App() {
           </div>
         </header>
         <section className="relative z-10 flex flex-1">
-          <AnimatePresence mode="wait">{mode === 'chat' ? <ChatWindow key="chat" /> : <CallPanel key="call" />}</AnimatePresence>
+          <AnimatePresence mode="wait">
+            {mode === 'chat' ? <ChatWindow key="chat" chatId={activeChatId ?? undefined} /> : <CallPanel key="call" />}
+          </AnimatePresence>
         </section>
       </main>
       <KnowledgeDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
