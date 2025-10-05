@@ -20,7 +20,12 @@ class Chat(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
-    messages: Mapped[list[Message]] = relationship("Message", back_populates="chat", cascade="all, delete-orphan")
+    messages: Mapped[list[Message]] = relationship(
+        "Message",
+        back_populates="chat",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class Message(Base):
@@ -35,4 +40,4 @@ class Message(Base):
     audio_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
-    chat: Mapped[Chat] = relationship("Chat", back_populates="messages")
+    chat: Mapped[Chat] = relationship("Chat", back_populates="messages", lazy="selectin")

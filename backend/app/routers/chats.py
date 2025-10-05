@@ -8,6 +8,7 @@ from typing import AsyncIterator
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session_factory
@@ -31,7 +32,11 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 async def list_chats(session: AsyncSession = Depends(get_session)) -> list[ChatSchema]:
     """Return all persisted chats ordered by creation time."""
 
-    result = await session.execute(select(Chat).order_by(Chat.created_at.desc()))
+    result = await session.execute(
+        select(Chat)
+            .options(selectinload(Chat.messages))
+            .order_by(Chat.created_at.desc())
+    )
     chats = result.scalars().all()
     return [ChatSchema.from_orm(chat) for chat in chats]
 
