@@ -180,7 +180,7 @@ function MessageBubble({ role, content }: Props) {
       <div className="text-xs uppercase tracking-[0.3em] text-white/40">{role}</div>
       <div className="prose prose-invert mt-2 max-w-none text-sm leading-relaxed prose-headings:font-semibold prose-headings:text-white prose-strong:text-white">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
+          remarkPlugins={[remarkMath, remarkGfm]}
           rehypePlugins={[rehypeKatex]}
           components={markdownComponents}
         >
