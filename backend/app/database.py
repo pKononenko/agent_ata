@@ -38,8 +38,13 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 async def lifespan(app) -> AsyncIterator[None]:
     """Manage engine lifecycle for FastAPI."""
 
+    from app import models  # noqa: F401  # Ensure models are registered with SQLAlchemy metadata.
+
     _create_engine()
     try:
+        if _engine is not None:
+            async with _engine.begin() as connection:
+                await connection.run_sync(Base.metadata.create_all)
         yield
     finally:
         if _engine is not None:

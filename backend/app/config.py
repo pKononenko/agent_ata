@@ -28,8 +28,20 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = Field("", description="API key for ElevenLabs text-to-speech streaming.")
 
     allowed_origins: List[str] = Field(
-        default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"],
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+        ],
         description="Origins permitted to access the API via CORS.",
+    )
+    allowed_origin_regex: str | None = Field(
+        default=r"http://(localhost|127\.0\.0\.1)(:\\d+)?",
+        description=(
+            "Optional regular expression that will be used to match additional allowed"
+            " origins for CORS requests."
+        ),
     )
 
     signalling_secret: str = Field(
