@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MessageBase(BaseModel):
@@ -26,8 +26,7 @@ class Message(MessageBase):
     id: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChatBase(BaseModel):
@@ -47,5 +46,4 @@ class Chat(ChatBase):
     created_at: datetime
     messages: list[Message] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
