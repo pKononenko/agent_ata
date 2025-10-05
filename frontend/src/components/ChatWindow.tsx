@@ -1,9 +1,14 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { SendHorizonal, AudioLines, Sparkle } from 'lucide-react';
 import clsx from 'clsx';
 
 import MessageBubble from './MessageBubble';
-import { useChatMessages, useSendMessage } from '../hooks/useChatApi';
+import {
+  useChatMessages,
+  useSendMessage,
+  streamCompletion,
+  type Message,
+} from '../hooks/useChatApi';
 
 interface Props {
   chatId?: string;
@@ -11,17 +16,53 @@ interface Props {
 
 function ChatWindow({ chatId }: Props) {
   const [input, setInput] = useState('');
+  const [streamingContent, setStreamingContent] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
   const { data: messages, isLoading, isError } = useChatMessages(chatId);
-  const sendMessage = useSendMessage(chatId);
+  const userMessageMutation = useSendMessage(chatId);
+  const assistantMessageMutation = useSendMessage(chatId);
+
+  const displayMessages = useMemo(() => {
+    if (!streamingContent) {
+      return messages;
+    }
+
+    const streamingMessage: Message = {
+      id: 'streaming',
+      role: 'assistant',
+      content: streamingContent,
+      created_at: new Date().toISOString(),
+      audio_url: null,
+    };
+
+    return [...(messages ?? []), streamingMessage];
+  }, [messages, streamingContent]);
 
   const handleSend = async (event?: FormEvent) => {
     event?.preventDefault();
-    if (!chatId || !input.trim() || sendMessage.isPending) return;
+    if (!chatId || !input.trim() || userMessageMutation.isPending || isStreaming) return;
+
     try {
-      await sendMessage.mutateAsync({ role: 'user', content: input.trim() });
+      const content = input.trim();
+      await userMessageMutation.mutateAsync({ role: 'user', content });
       setInput('');
+
+      setIsStreaming(true);
+      setStreamingContent('');
+      const assistantReply = await streamCompletion(chatId, {
+        onToken: (token) => {
+          setStreamingContent((prev) => (prev ?? '') + token);
+        },
+      });
+
+      if (assistantReply.trim()) {
+        await assistantMessageMutation.mutateAsync({ role: 'assistant', content: assistantReply });
+      }
     } catch (error) {
       console.error('Unable to send message', error);
+    } finally {
+      setStreamingContent(null);
+      setIsStreaming(false);
     }
   };
 
@@ -35,7 +76,7 @@ function ChatWindow({ chatId }: Props) {
           {chatId && !isLoading && !isError && messages?.length === 0 && (
             <p className="text-sm text-white/60">No messages yet. Say hello to kick things off!</p>
           )}
-          {messages?.map((message) => (
+          {displayMessages?.map((message) => (
             <MessageBubble key={message.id} role={message.role} content={message.content} />
           ))}
         </div>
@@ -56,10 +97,10 @@ function ChatWindow({ chatId }: Props) {
             />
             <button
               type="submit"
-              disabled={!chatId || !input.trim() || sendMessage.isPending}
+              disabled={!chatId || !input.trim() || userMessageMutation.isPending || isStreaming}
               className={clsx(
                 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-primary-950 shadow-lg transition',
-                !chatId || !input.trim() || sendMessage.isPending
+                !chatId || !input.trim() || userMessageMutation.isPending || isStreaming
                   ? 'bg-accent/40 cursor-not-allowed'
                   : 'bg-accent hover:bg-accent/90'
               )}

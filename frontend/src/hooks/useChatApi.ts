@@ -86,6 +86,98 @@ export function useSendMessage(chatId: string | undefined) {
   });
 }
 
+interface StreamOptions {
+  signal?: AbortSignal;
+  onToken?: (token: string) => void;
+}
+
+export async function streamCompletion(
+  chatId: string | undefined,
+  options?: StreamOptions,
+): Promise<string> {
+  if (!chatId) throw new Error('Chat ID is required');
+
+  const response = await fetch(`${API_BASE}/chats/${chatId}/stream`, {
+    method: 'POST',
+    headers: { Accept: 'text/event-stream' },
+    signal: options?.signal,
+  });
+
+  if (!response.ok || !response.body) {
+    throw new Error('Unable to stream completion');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let accumulated = '';
+
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let eventBoundary = buffer.indexOf('\n\n');
+      while (eventBoundary !== -1) {
+        const rawEvent = buffer.slice(0, eventBoundary).trim();
+        buffer = buffer.slice(eventBoundary + 2);
+
+        if (!rawEvent.startsWith('data:')) {
+          eventBoundary = buffer.indexOf('\n\n');
+          continue;
+        }
+
+        const payload = rawEvent.slice(5).trim();
+        if (!payload) {
+          eventBoundary = buffer.indexOf('\n\n');
+          continue;
+        }
+
+        try {
+          const parsed = JSON.parse(payload);
+          const choice = parsed?.choices?.[0];
+          const deltaContent: string | undefined = choice?.delta?.content;
+          const finishReason: string | null | undefined = choice?.finish_reason;
+
+          if (deltaContent) {
+            accumulated += deltaContent;
+            options?.onToken?.(deltaContent);
+          }
+
+          if (finishReason) {
+            return accumulated;
+          }
+        } catch (error) {
+          console.error('Unable to parse streaming chunk', error);
+        }
+
+        eventBoundary = buffer.indexOf('\n\n');
+      }
+    }
+
+    if (buffer) {
+      try {
+        const parsed = JSON.parse(buffer.replace(/^data:\s*/, ''));
+        const deltaContent: string | undefined = parsed?.choices?.[0]?.delta?.content;
+        if (deltaContent) {
+          accumulated += deltaContent;
+          options?.onToken?.(deltaContent);
+        }
+      } catch (error) {
+        console.error('Unable to parse trailing streaming chunk', error);
+      }
+    }
+
+    return accumulated;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function useKnowledgeSearch() {
   return useMutation({
     mutationFn: async (query: string) => {
